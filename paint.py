@@ -10,7 +10,7 @@ import numpy as np
 def getPaint(img,debug=False):
     ratio = 0
     icon = img.copy()
-    while (max(icon.shape[:2])>1000):
+    while (max(icon.shape[:2])>2000):
         icon = cv2.pyrDown(icon)
         ratio = ratio+1
     ratio = 2**ratio
@@ -53,7 +53,7 @@ def findRect(img,debug=False):
     h,w = gray.shape[:2]
     
     # blur image to remove noise using Bilateral filtering
-    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+    # gray = cv2.bilateralFilter(gray, 11, 17, 17)
     if debug:
         cv2.imshow("blur",gray)
     
