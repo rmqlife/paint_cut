@@ -15,9 +15,10 @@ def getPaint(img,debug=False):
         ratio = ratio+1
     ratio = 2**ratio
     rect = findRect(icon,debug)
-    rect *= ratio
     if rect is None:
         return None
+    
+    rect *= ratio
     (tl, tr, br, bl) = rect
     # compute the length of each lateral
     wb = np.sqrt( (br[0] - bl[0])**2 + (br[1] - bl[1])**2 )
@@ -27,6 +28,11 @@ def getPaint(img,debug=False):
     
     w = int(max(wb,wt)) - 1
     h = int(max(hr,hl)) - 1
+    
+    (hi,wi)=img.shape[:2]
+    #print w,wi,h,hi,float(w)/float(wi),float(h)/float(hi)
+    if min(float(w)/float(wi), float(h)/float(hi)) < 0.2:
+        return None
     
     dstRect = np.array([
         [0,0],
@@ -60,7 +66,7 @@ def findRect(img,debug=False):
     (_, cnts, _) = cv2.findContours(edge.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     # find the top 10 contours
-    cnts = sorted(cnts, key = cv2. contourArea, reverse = True)[:10]
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
     
     findFlag = False
     # loop over contours
@@ -112,5 +118,3 @@ if __name__ == "__main__":
     if len(sys.argv)>2:
         img = cv2.imread(sys.argv[1])
         cv2.imwrite(sys.argv[2],getPaint(img,0))
-        import jpeg
-        jpeg
