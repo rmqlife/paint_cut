@@ -7,10 +7,36 @@
 # https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
 import cv2
 import numpy as np
-def find(img,debug=False):
+def getPaint(img,debug=False):
     while (max(img.shape[:2])>1000):
         img = cv2.pyrDown(img)
+    rect=findRect(img,debug)
+    if rect is None:
+        return None
+    (tl, tr, br, bl) = rect
+    # compute the length of each lateral
+    wb = np.sqrt( (br[0] - bl[0])**2 + (br[1] - bl[1])**2 )
+    wt = np.sqrt( (tr[0] - tl[0])**2 + (tr[1] - tl[1])**2 ) 
+    hl = np.sqrt( (bl[0] - tl[0])**2 + (bl[1] - tl[1])**2 )
+    hr = np.sqrt( (br[0] - tr[0])**2 + (br[1] - tr[1])**2 )
+    
+    w = int(max(wb,wt)) - 1
+    h = int(max(hr,hl)) - 1
+    
+    dstRect = np.array([
+        [0,0],
+        [w,0],
+        [w,h],
+        [0,h]], dtype = "float32")
+    
+    # warp
+    M = cv2.getPerspectiveTransform(rect,dstRect)
+    warp = cv2.warpPerspective(img, M, (w,h))
+    cv2.imshow("warp",warp)
+    cv2.waitKey(0)    
+    print dstRect       
 
+def findRect(img,debug=False):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     
     if debug:
@@ -33,6 +59,7 @@ def find(img,debug=False):
     # find the top 10 contours
     cnts = sorted(cnts, key = cv2. contourArea, reverse = True)[:10]
     
+    findFlag = False
     # loop over contours
     for c in cnts:
         # perimeter
@@ -43,14 +70,16 @@ def find(img,debug=False):
         # if the approximated contour has four points, assume it is a rect
         if len(approx) == 4:
             screenCnt = approx
+            findFlag = True
             break
+    if not findFlag:
+        return None
                 
     # draw contours
     if debug:
         cv2.drawContours(img, [screenCnt] , -1, (255,0,0), 2)
         cv2.imshow("cnts",img)
-
- 
+        
     # determine the top-left top-right bottom-right bottom-left, clockwise order
     pts = screenCnt.reshape(4,2)
     rect = np.zeros((4,2), dtype = "float32")
@@ -66,16 +95,17 @@ def find(img,debug=False):
     rect[1] = pts[np.argmin(ysx)]
     # bottom-left
     rect[3] = pts[np.argmax(ysx)]
-
+    
     if debug:
         print pts
         print ysx
         print rect
-        cv2.waitKey(0)
-    pass
+        cv2.waitKey(0)    
+    
+    return rect 
     
 if __name__ == "__main__":
     import sys
     if len(sys.argv)>0:
         img = cv2.imread(sys.argv[1])
-        find(img,1)
+        getPaint(img,0)
