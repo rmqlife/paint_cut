@@ -8,9 +8,14 @@
 import cv2
 import numpy as np
 def getPaint(img,debug=False):
-    while (max(img.shape[:2])>1000):
-        img = cv2.pyrDown(img)
-    rect=findRect(img,debug)
+    ratio = 0
+    icon = img.copy()
+    while (max(icon.shape[:2])>1000):
+        icon = cv2.pyrDown(icon)
+        ratio = ratio+1
+    ratio = 2**ratio
+    rect = findRect(icon,debug)
+    rect *= ratio
     if rect is None:
         return None
     (tl, tr, br, bl) = rect
@@ -30,12 +35,10 @@ def getPaint(img,debug=False):
         [0,h]], dtype = "float32")
     
     # warp
-    M = cv2.getPerspectiveTransform(rect,dstRect)
+    M = cv2.getPerspectiveTransform(rect,dstRect) 
     warp = cv2.warpPerspective(img, M, (w,h))
-    cv2.imshow("warp",warp)
-    cv2.waitKey(0)    
-    print dstRect       
-
+    return warp 
+    
 def findRect(img,debug=False):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     
@@ -106,6 +109,8 @@ def findRect(img,debug=False):
     
 if __name__ == "__main__":
     import sys
-    if len(sys.argv)>0:
+    if len(sys.argv)>2:
         img = cv2.imread(sys.argv[1])
-        getPaint(img,0)
+        cv2.imwrite(sys.argv[2],getPaint(img,0))
+        import jpeg
+        jpeg
